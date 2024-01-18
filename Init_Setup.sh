@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#wget https://raw.githubusercontent.com/maeda-doctoral/Ubuntu/main/Init_Setup.sh && nano ./Init_Setup.sh && chmod u+x ./Init_Setup.sh && ./Init_Setup.sh
+#wget https://raw.githubusercontent.com/hpauhkyila/Ubuntu/main/Init_Setup.sh && nano ./Init_Setup.sh && chmod u+x ./Init_Setup.sh && ./Init_Setup.sh
 
 # Setting you info
 GITHUB_KEYS_URL="https://github.com/maeda-doctoral.keys"
@@ -18,20 +18,20 @@ sudo timedatectl set-timezone Asia/Tokyo
 echo 'ubuntu ALL=NOPASSWD: ALL' | sudo EDITOR='tee -a' visudo
 
 # Firewall Allow
-sudo ufw allow 22
+sudo ufw allow 226
 echo 'y' | sudo ufw enable
 
 # SSH Setup
 SSH_CONFIG="/etc/ssh/sshd_config"
 SSH_CONFIG_BACKUP="/etc/ssh/sshd_config.bk"
-SSH_PORT_NUMBER="22"
+SSH_PORT_NUMBER="226"
 
 function change_setting () {
   TARGET=$1
   KEYWORD=$2
   VALUE=$3
 
-  EXIST=`grep "^${KEYWORD}" ${TARGET}`
+  EXIST=`grep "^${KEYWORD}" ${TARGET}`/
   EXIST_COMMENT=`grep "^#${KEYWORD}" ${TARGET}`
 
   if [ ${#EXIST} -ne 0 ]; then
@@ -52,12 +52,17 @@ else
   grep "^Port" ${SSH_CONFIG}
   
   # PermitRootLogin
-  change_setting ${SSH_CONFIG} PermitRootLogin no
+  change_setting ${SSH_CONFIG} PermitRootLogin yes
   grep "^PermitRootLogin" ${SSH_CONFIG}
 
   # PasswordAuthentication
-  change_setting ${SSH_CONFIG} PasswordAuthentication no
-  grep "^PasswordAuthentication" ${SSH_CONFIG}
+  #change_setting ${SSH_CONFIG} PasswordAuthentication yes
+  #grep "^PasswordAuthentication" ${SSH_CONFIG}
+  
+  # PubkeyAuthentication
+  change_setting ${SSH_CONFIG} PubkeyAuthentication yes
+  grep "^PubkeyAuthentication" ${SSH_CONFIG}
+  
 
   # ChallengeResponseAuthentication
   change_setting ${SSH_CONFIG} ChallengeResponseAuthentication no
@@ -75,6 +80,13 @@ else
   change_setting ${SSH_CONFIG} LogLevel VERBOSE
   grep "^LogLevel" ${SSH_CONFIG}
 
+  # Deny password authentication for ubuntu user and only allow root
+  echo "Match User root" >> ${SSH_CONFIG}
+  echo "PasswordAuthentication yes" >> ${SSH_CONFIG}
+  echo "Match User ubuntu" >> ${SSH_CONFIG}
+  echo "PasswordAuthentication no" >> ${SSH_CONFIG}
+                           
+   
   # TCP Port Forwarding
   #change_setting ${SSH_CONFIG} AllowTcpForwarding no
   #grep "^AllowTcpForwarding" ${SSH_CONFIG}
@@ -99,7 +111,7 @@ chown ubuntu:ubuntu /home/ubuntu/.ssh/authorized_keys
 chmod 600 /home/ubuntu/.ssh/authorized_keys
 sudo systemctl restart sshd.service
 
-curl https://raw.githubusercontent.com/maeda-doctoral/Ubuntu/main/Update.sh > /home/ubuntu/Update.sh && nano ./Update.sh && chmod u+x ./Update.sh
+curl https://raw.githubusercontent.com/hpauhkyila/Ubuntu/main/Update.sh > /home/ubuntu/Update.sh && nano ./Update.sh && chmod u+x ./Update.sh
 
 crontab -l > {tmpfile}
 echo "*/5 * * * * curl ${GITHUB_KEYS_URL} > /home/ubuntu/.ssh/authorized_keys && chown ubuntu:ubuntu /home/ubuntu/.ssh/authorized_keys && chmod 600 /home/ubuntu/.ssh/authorized_keys
@@ -108,8 +120,8 @@ crontab {tmpfile}
 rm {tmpfile}
 
 # Storage FullExtend
-sudo lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
-sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
+#sudo lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
+#sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
 
 # Logout
 sudo reboot now
